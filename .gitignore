@@ -17,9 +17,13 @@ Desktop.ini
 .devcontainer/
 .vscode/
 
-# Terraform
+# Terraform files
 *.tfstate
 *.backup
 .terraform
 *.hcl
-plan.out
+*.terraform
+*.terraform.lock.hcl
+*.terraform.tfstate.lock.info
+*plan.out
+*.tfvars
