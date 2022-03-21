@@ -20,7 +20,7 @@ stages:
       name: InstallTerraform
       displayName: 'Install Terraform'
       inputs:
-        terraformVersion: '1.0.8'
+        terraformVersion: '1.1.7'
 
     - task: PowerShell@2
       name: 'DefineEnvironment'
@@ -40,7 +40,7 @@ stages:
         script: |
           terraform init -input=false `
           --backend-config "storage_account_name=$(backend_storage_account_name)" `
-          --backend-config="container_name=$(DefineEnvironment.ContainerName)" `
+          --backend-config="container_name=$(container_name)" `
           --backend-config="key=$(backend_shared_storage_key)" `
           --backend-config="access_key=$(storage_access_key)"
           
@@ -49,33 +49,7 @@ stages:
           -var "tenant_id=$(tenant_id)" `
           -var "client_id=$(client_id)" `
           -var "client_secret=$(client_secret)" `
-          -var "environment=$(DefineEnvironment.Environment)"
           terraform apply plan.out
-
-    - task: PowerShell@2
-      name: DeployStagingInfrastructure
-      displayName: 'Deploy Staging Infrastructure'
-      inputs: 
-        targetType: 'inline'
-        workingDirectory: $(Agent.BuildDirectory)/s/terraform/root-staging-prod
-        script: |
-          terraform init -input=false `
-          --backend-config "storage_account_name=$(backend_storage_account_name)" `
-          --backend-config="container_name=$(container_name)" `
-          --backend-config="key=$(backend_storage_key)" `
-          --backend-config="access_key=$(access_key)"
-
-          terraform plan -out plan.tfplan `
-          -var "subscription_id=$(subscription_id)" `
-          -var "tenant_id=$(tenant_id)" `
-          -var "client_id=$(client_id)" `
-          -var "client_secret=$(client_secret)" `
-          -var "environment=$(DefineEnvironment.Environment)" `
-          -var "state_storage_account_name=$(backend_storage_account_name)" `
-          -var "shared_container_name=$(DefineEnvironment.ContainerName)" `
-          -var "shared_key=$(backend_shared_storage_key)" `
-          -var "state_storage_access_key=$(storage_access_key)" `
-          -var "prod_or_staging=staging"
 
     - task: ArchiveFiles@2
       inputs:
