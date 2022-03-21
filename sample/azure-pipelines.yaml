@@ -142,7 +142,7 @@ stages:
             script: |
               set -euo pipefail
 
-              tar zxvf $(System.ArtifactsDirectory)/tfplan/drop.tgz
+              tar zxvf $(System.ArtifactsDirectory)/drop.tgz
 
         - task: AzureCLI@2
           displayName: 'terraform apply'
