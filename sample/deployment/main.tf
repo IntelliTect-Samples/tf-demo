@@ -10,9 +10,11 @@ provider "azurerm" {
   features {}
 }
 
-terraform {
-  backend "remote" {}
-}
+backend "azurerm" {}
+  required_version = ">= 1.1.7"
+  required_providers {
+    azurerm = "~> 2.76"
+  }
 
 module "resource_group" {
   source = "../../modules/azurerm_resource_group"
