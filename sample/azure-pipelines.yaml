@@ -40,9 +40,6 @@ stages:
         workingDirectory: $(working_directory)
         script: |
           pwd
-          echo --- Terraform check ---
-          terraform --version
-          terraform validate -no-color
 
           terraform init -input=false `
           --backend-config "storage_account_name=$(storage_account_name)" `
@@ -50,6 +47,10 @@ stages:
           --backend-config="key=$(storage_key)" `
           --backend-config="access_key=$(access_key)"
           
+          echo --- Terraform check ---
+          terraform --version
+          terraform validate -no-color
+
           $result = Select-String -Path *.tf -Pattern "^resource"
           if ($result) {
               $result
@@ -73,8 +74,6 @@ stages:
           -var "client_secret=$(client_secret)" `
           -input=false -no-color  3>$out/warn.txt 2>$out/error.txt >$out/output.txt
         
-          Copy-Item -Path .\plan.tfplan -Destination $plan
-          Copy-Item -Path .\.terraform.lock.hcl -Destination $plan
           "--- errors ---------------------------------------------------------------------------------------------"
           type $out/error.txt
           "--- warnings -------------------------------------------------------------------------------------------"
