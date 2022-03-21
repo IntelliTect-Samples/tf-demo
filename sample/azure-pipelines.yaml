@@ -131,6 +131,12 @@ stages:
             scriptLocation: 'inlineScript'
             scriptType: ps
             inlineScript: |
+              pwd
+              ls
+              cd ..
+              pwd
+              ls
+
               terraform init -input=false `
               --backend-config "storage_account_name=$(storage_account_name)" `
               --backend-config="container_name=$(container_name)" `
