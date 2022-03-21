@@ -81,8 +81,10 @@ stages:
           "--- output ---------------------------------------------------------------------------------------------"
           type $out/output.txt
 
-    - publish: $(Build.ArtifactStagingDirectory)
-      artifact: tfplan
+    - task: PublishPipelineArtifact@1 
+      artifactType: 'pipeline'
+      targetPath: "$(working_directory)/plan.tfplan"
+      artifactName: 'tfplan'
 
 - stage: WaitForValidation
   displayName: 'Wait for Approval'
