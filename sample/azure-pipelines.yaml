@@ -132,8 +132,8 @@ stages:
             scriptType: 'bash'
             inlineScript: |
               set -euo pipefail
-              ./terraform workspace select $(tenant_code)
-              ./terraform apply \
+              terraform workspace select $(tenant_id)
+              terraform apply \
                       -input=false \
                       -no-color \
                       plan.tfplan
