@@ -33,23 +33,57 @@ stages:
           Import-Module AzureRM.profile -force
 
     - task: PowerShell@2
-      name: 'TerraformPlan'
-      displayName: 'Terraform Plan'
+      name: 'ValidateTerraform'
+      displayName: 'Validate Terraform'
       inputs: 
         targetType: 'inline'
         workingDirectory: $(working_directory)
         script: |
+          pwd
+          echo --- Terraform check ---
+          terraform --version
+          terraform validate -no-color
+
           terraform init -input=false `
           --backend-config "storage_account_name=$(storage_account_name)" `
           --backend-config="container_name=$(container_name)" `
           --backend-config="key=$(storage_key)" `
           --backend-config="access_key=$(access_key)"
           
+          $result = Select-String -Path *.tf -Pattern "^resource"
+          if ($result) {
+              $result
+              exit 1
+          }
+          else {
+              exit 0
+          }
+
+    - task: PowerShell@2
+      name: 'TerraformPlan'
+      displayName: 'Terraform Plan'
+      inputs: 
+        targetType: 'inline'
+        workingDirectory: $(working_directory)
+        script: |
           terraform plan -out plan.tfplan `
           -var "subscription_id=$(subscription_id)" `
           -var "tenant_id=$(tenant_id)" `
           -var "client_id=$(client_id)" `
-          -var "client_secret=$(client_secret)" 
+          -var "client_secret=$(client_secret)" `
+          -input=false -no-color  3>$out/warn.txt 2>$out/error.txt >$out/output.txt
+        
+          Copy-Item -Path .\plan.tfplan -Destination $plan
+          Copy-Item -Path .\.terraform.lock.hcl -Destination $plan
+          "--- errors ---------------------------------------------------------------------------------------------"
+          type $out/error.txt
+          "--- warnings -------------------------------------------------------------------------------------------"
+          type $out/warn.txt
+          "--- output ---------------------------------------------------------------------------------------------"
+          type $out/output.txt
+          Get-Content error.txt | Foreach-Object {
+            Write-Host "##vso[task.LogIssue type=error;]$_"
+          }
 
     - task: ArchiveFiles@2
       inputs:
@@ -91,24 +125,11 @@ stages:
       displayName: Apply Plan
       timeoutInMinutes: 4320
       steps:
-        - task: Bash@3
-          displayName: 'Download Terraform'
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@0
+          name: InstallTerraform
+          displayName: 'Install Terraform'
           inputs:
-            workingDirectory: $(working_directory)
-            targetType: 'inline'
-            script: |
-              set -euo pipefail
-
-              wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
-              unzip terraform*.zip
-              rm terraform*.zip
-              chmod u+x ./terraform
-              ./terraform version
-
-        - task: PowerShell@2
-          inputs:
-            targetType: 'inline'
-            script: 'Install-Module -Name SqlServer -Force'
+            terraformVersion: '1.1.7'
 
         - task: DownloadBuildArtifacts@0
           inputs:
