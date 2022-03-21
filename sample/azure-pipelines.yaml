@@ -80,7 +80,6 @@ stages:
           type $out/warn.txt
           "--- output ---------------------------------------------------------------------------------------------"
           type $out/output.txt
-          }
 
     - task: ArchiveFiles@2
       inputs:
