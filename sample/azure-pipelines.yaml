@@ -82,9 +82,10 @@ stages:
           type $out/output.txt
 
     - task: PublishPipelineArtifact@1 
-      artifactType: 'pipeline'
-      targetPath: "$(working_directory)/plan.tfplan"
-      artifactName: 'tfplan'
+      inputs:
+        artifactType: 'pipeline'
+        targetPath: "$(working_directory)/plan.tfplan"
+        artifactName: 'tfplan'
 
 - stage: WaitForValidation
   displayName: 'Wait for Approval'
@@ -133,11 +134,6 @@ stages:
             scriptLocation: 'inlineScript'
             scriptType: ps
             inlineScript: |
-              pwd
-              ls
-              cd ..
-              pwd
-              ls
 
               terraform init -input=false `
               --backend-config "storage_account_name=$(storage_account_name)" `
