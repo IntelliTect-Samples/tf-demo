@@ -127,6 +127,7 @@ stages:
           displayName: 'terraform apply'
           inputs:
             workingDirectory: $(working_directory)
+            azureSubscription: 'Demo-Connection'
             scriptLocation: 'inlineScript'
             scriptType: 'bash'
             inlineScript: |
