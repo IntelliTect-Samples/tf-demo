@@ -40,10 +40,10 @@ stages:
         workingDirectory: $(working_directory)
         script: |
           terraform init -input=false `
-          --backend-config "storage_account_name=$(backend_storage_account_name)" `
+          --backend-config "storage_account_name=$(storage_account_name)" `
           --backend-config="container_name=$(container_name)" `
-          --backend-config="key=$(backend_shared_storage_key)" `
-          --backend-config="access_key=$(storage_access_key)"
+          --backend-config="key=$(storage_key)" `
+          --backend-config="access_key=$(access_key)"
           
           terraform plan -out plan.tfplan `
           -var "subscription_id=$(subscription_id)" `
