@@ -1,0 +1,52 @@
+
+trigger:
+- TerraformDemo3
+
+pool:
+  vmImage: 'windows-latest'
+stages:
+- stage: Deploy
+
+  jobs:
+  - deployment: Plan
+    displayName: "Plan"
+    strategy:
+      runOnce: 
+        deploy:
+          steps:
+          - checkout: self
+          - task: TerraformInstaller@0
+            name: InstallTerraform
+            displayName: 'Install Terraform'
+            inputs:
+              terraformVersion: '1.0.8'
+
+          - task: PowerShell@2
+            name: 'DefineEnvironment'
+            displayName: 'Define Environment'
+            inputs:
+              targetType: 'inline'
+              script: |
+                Install-Module Az.Accounts -force
+                Import-Module AzureRM.profile -force
+
+          - task: PowerShell@2
+            name: 'DeployTerraform'
+            displayName: 'Deploy Terraform'
+            inputs: 
+              targetType: 'inline'
+              workingDirectory: $(Agent.BuildDirectory)/s/terraform/root-shared
+              script: |
+                terraform init -input=false `
+                --backend-config "storage_account_name=$(backend_storage_account_name)" `
+                --backend-config="container_name=$(DefineEnvironment.ContainerName)" `
+                --backend-config="key=$(backend_shared_storage_key)" `
+                --backend-config="access_key=$(storage_access_key)"
+                
+                terraform plan -out plan.out `
+                -var "subscription_id=$(subscription_id)" `
+                -var "tenant_id=$(tenant_id)" `
+                -var "client_id=$(client_id)" `
+                -var "client_secret=$(client_secret)" `
+                -var "environment=$(DefineEnvironment.Environment)"
+                terraform apply plan.out
