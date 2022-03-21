@@ -82,7 +82,7 @@ stages:
           type $out/output.txt
 
     - publish: $(Build.ArtifactStagingDirectory)
-      artifact: Plan
+      artifact: tfplan
 
 - stage: WaitForValidation
   displayName: 'Wait for Approval'
@@ -120,7 +120,7 @@ stages:
           displayName: Download Plan
           inputs:
             buildType: 'current'
-            artifactName: 'Plan'
+            artifactName: 'tfplan'
             targetPath: '$(working_directory)'
 
         - task: AzureCLI@2
