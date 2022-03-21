@@ -81,7 +81,7 @@ stages:
           "--- output ---------------------------------------------------------------------------------------------"
           type $out/output.txt
 
-    - publish: $(Build.ArtifactStagingDirectory)/plan
+    - publish: $(Build.ArtifactStagingDirectory)
       artifact: Plan
 
 - stage: WaitForValidation
