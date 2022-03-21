@@ -4,6 +4,11 @@ trigger:
 
 pool:
   vmImage: 'windows-latest'
+
+variables:
+  - name: working_directory
+    value: '$(Agent.BuildDirectory)/s/sample/deployment'
+
 stages:
 - stage: Plan
 
@@ -28,11 +33,11 @@ stages:
           Import-Module AzureRM.profile -force
 
     - task: PowerShell@2
-      name: 'DeployTerraform'
-      displayName: 'Deploy Terraform'
+      name: 'TerraformPlan'
+      displayName: 'Terraform Plan'
       inputs: 
         targetType: 'inline'
-        workingDirectory: $(Agent.BuildDirectory)/s/terraform/root-shared
+        workingDirectory: $(working_directory)
         script: |
           terraform init -input=false `
           --backend-config "storage_account_name=$(backend_storage_account_name)" `
@@ -40,12 +45,11 @@ stages:
           --backend-config="key=$(backend_shared_storage_key)" `
           --backend-config="access_key=$(storage_access_key)"
           
-          terraform plan -out plan.out `
+          terraform plan -out plan.tfplan `
           -var "subscription_id=$(subscription_id)" `
           -var "tenant_id=$(tenant_id)" `
           -var "client_id=$(client_id)" `
-          -var "client_secret=$(client_secret)" `
-          terraform apply plan.out
+          -var "client_secret=$(client_secret)" 
 
     - task: ArchiveFiles@2
       inputs:
@@ -127,7 +131,6 @@ stages:
           displayName: 'terraform apply'
           inputs:
             workingDirectory: $(working_directory)
-            azureSubscription: 'PC-TF-GOV-SC'
             scriptLocation: 'inlineScript'
             scriptType: 'bash'
             inlineScript: |
