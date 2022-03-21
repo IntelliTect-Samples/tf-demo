@@ -81,19 +81,8 @@ stages:
           "--- output ---------------------------------------------------------------------------------------------"
           type $out/output.txt
 
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: './'
-        archiveType: tar
-        tarCompression: gz
-        archiveFile: '$(Build.ArtifactStagingDirectory)/drop.tgz'
-        replaceExsistingFile: true
-        includeRootFolder: false
-
-    - task: PublishBuildArtifacts@1
-      inputs:
-        pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: tfplan
+    - publish: $(Build.ArtifactStagingDirectory)/$(target-dir)/plan
+      artifact: Plan
 
 - stage: WaitForValidation
   displayName: 'Wait for Approval'
@@ -127,22 +116,12 @@ stages:
           inputs:
             terraformVersion: '1.1.7'
 
-        - task: DownloadBuildArtifacts@0
+        - task: DownloadPipelineArtifact@2
+          displayName: Download Plan
           inputs:
-            buildType: current
-            downloadType: single
-            artifactName: tfplan
-            downloadPath: $(System.ArtifactsDirectory)
-
-        - task: Bash@3
-          displayName: 'Extract Plan'
-          inputs:
-            workingDirectory: $(System.DefaultWorkingDirectory)
-            targetType: 'inline'
-            script: |
-              set -euo pipefail
-
-              tar zxvf $(System.ArtifactsDirectory)/drop.tgz
+            buildType: 'current'
+            artifactName: 'Plan'
+            targetPath: '$(Build.SourcesDirectory)/$(target-dir)/'
 
         - task: AzureCLI@2
           displayName: 'terraform apply'
