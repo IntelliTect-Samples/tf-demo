@@ -9,75 +9,161 @@ trigger:
 pool:
   vmImage: 'windows-latest'
 stages:
-- stage: Deploy
+- stage: Plan
 
   jobs:
-  - deployment: Plan
+  - job: Plan
     displayName: "Plan"
-    strategy:
-      runOnce: 
-        deploy:
-          steps:
-          - checkout: self
-          - task: TerraformInstaller@0
-            name: InstallTerraform
-            displayName: 'Install Terraform'
-            inputs:
-              terraformVersion: '1.0.8'
+    steps:
+    - checkout: self
+    - task: TerraformInstaller@0
+      name: InstallTerraform
+      displayName: 'Install Terraform'
+      inputs:
+        terraformVersion: '1.0.8'
 
-          - task: PowerShell@2
-            name: 'DefineEnvironment'
-            displayName: 'Define Environment'
-            inputs:
-              targetType: 'inline'
-              script: |
-                Install-Module Az.Accounts -force
-                Import-Module AzureRM.profile -force
+    - task: PowerShell@2
+      name: 'DefineEnvironment'
+      displayName: 'Define Environment'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Install-Module Az.Accounts -force
+          Import-Module AzureRM.profile -force
 
-          - task: PowerShell@2
-            name: 'DeployTerraform'
-            displayName: 'Deploy Terraform'
-            inputs: 
-              targetType: 'inline'
-              workingDirectory: $(Agent.BuildDirectory)/s/terraform/root-shared
-              script: |
-                terraform init -input=false `
-                --backend-config "storage_account_name=$(backend_storage_account_name)" `
-                --backend-config="container_name=$(DefineEnvironment.ContainerName)" `
-                --backend-config="key=$(backend_shared_storage_key)" `
-                --backend-config="access_key=$(storage_access_key)"
-                
-                terraform plan -out plan.out `
-                -var "subscription_id=$(subscription_id)" `
-                -var "tenant_id=$(tenant_id)" `
-                -var "client_id=$(client_id)" `
-                -var "client_secret=$(client_secret)" `
-                -var "environment=$(DefineEnvironment.Environment)"
-                terraform apply plan.out
+    - task: PowerShell@2
+      name: 'DeployTerraform'
+      displayName: 'Deploy Terraform'
+      inputs: 
+        targetType: 'inline'
+        workingDirectory: $(Agent.BuildDirectory)/s/terraform/root-shared
+        script: |
+          terraform init -input=false `
+          --backend-config "storage_account_name=$(backend_storage_account_name)" `
+          --backend-config="container_name=$(DefineEnvironment.ContainerName)" `
+          --backend-config="key=$(backend_shared_storage_key)" `
+          --backend-config="access_key=$(storage_access_key)"
+          
+          terraform plan -out plan.out `
+          -var "subscription_id=$(subscription_id)" `
+          -var "tenant_id=$(tenant_id)" `
+          -var "client_id=$(client_id)" `
+          -var "client_secret=$(client_secret)" `
+          -var "environment=$(DefineEnvironment.Environment)"
+          terraform apply plan.out
 
-          - task: PowerShell@2
-            name: DeployStagingInfrastructure
-            displayName: 'Deploy Staging Infrastructure'
-            inputs: 
-              targetType: 'inline'
-              workingDirectory: $(Agent.BuildDirectory)/s/terraform/root-staging-prod
-              script: |
-                terraform init -input=false `
-                --backend-config "storage_account_name=$(backend_storage_account_name)" `
-                --backend-config="container_name=$(container_name)" `
-                --backend-config="key=$(backend_storage_key)" `
-                --backend-config="access_key=$(access_key)"
+    - task: PowerShell@2
+      name: DeployStagingInfrastructure
+      displayName: 'Deploy Staging Infrastructure'
+      inputs: 
+        targetType: 'inline'
+        workingDirectory: $(Agent.BuildDirectory)/s/terraform/root-staging-prod
+        script: |
+          terraform init -input=false `
+          --backend-config "storage_account_name=$(backend_storage_account_name)" `
+          --backend-config="container_name=$(container_name)" `
+          --backend-config="key=$(backend_storage_key)" `
+          --backend-config="access_key=$(access_key)"
 
-                terraform plan -out plan.out `
-                -var "subscription_id=$(subscription_id)" `
-                -var "tenant_id=$(tenant_id)" `
-                -var "client_id=$(client_id)" `
-                -var "client_secret=$(client_secret)" `
-                -var "environment=$(DefineEnvironment.Environment)" `
-                -var "state_storage_account_name=$(backend_storage_account_name)" `
-                -var "shared_container_name=$(DefineEnvironment.ContainerName)" `
-                -var "shared_key=$(backend_shared_storage_key)" `
-                -var "state_storage_access_key=$(storage_access_key)" `
-                -var "prod_or_staging=staging"
+          terraform plan -out plan.tfplan `
+          -var "subscription_id=$(subscription_id)" `
+          -var "tenant_id=$(tenant_id)" `
+          -var "client_id=$(client_id)" `
+          -var "client_secret=$(client_secret)" `
+          -var "environment=$(DefineEnvironment.Environment)" `
+          -var "state_storage_account_name=$(backend_storage_account_name)" `
+          -var "shared_container_name=$(DefineEnvironment.ContainerName)" `
+          -var "shared_key=$(backend_shared_storage_key)" `
+          -var "state_storage_access_key=$(storage_access_key)" `
+          -var "prod_or_staging=staging"
 
-                terraform apply plan.out
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: './'
+        archiveType: tar
+        tarCompression: gz
+        archiveFile: '$(Build.ArtifactStagingDirectory)/drop.tgz'
+        replaceExsistingFile: true
+        includeRootFolder: false
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        artifactName: tfplan
+
+- stage: WaitForValidation
+  displayName: 'Wait for Approval'
+  dependsOn: Plan
+  condition: eq(dependencies.Plan.result, 'Succeeded')
+  jobs:
+    - job: waitForValidationJob
+      displayName: Wait for Approval
+      pool: server
+      timeoutInMinutes: 4320
+      steps:
+        - task: ManualValidation@0
+          timeoutInMinutes: 240
+          continueOnError: true
+          inputs:
+            instructions: 'Approval for Apply'
+            onTimeout: reject
+
+- stage: ApplyPlan
+  displayName: 'Apply Plan'
+  dependsOn: WaitForValidation
+  condition: eq(dependencies.WaitForValidation.result, 'Succeeded')
+  jobs:
+    - job: ApplyPlanJob
+      displayName: Apply Plan
+      timeoutInMinutes: 4320
+      steps:
+        - task: Bash@3
+          displayName: 'Download Terraform'
+          inputs:
+            workingDirectory: $(working_directory)
+            targetType: 'inline'
+            script: |
+              set -euo pipefail
+
+              wget https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+              unzip terraform*.zip
+              rm terraform*.zip
+              chmod u+x ./terraform
+              ./terraform version
+
+        - task: PowerShell@2
+          inputs:
+            targetType: 'inline'
+            script: 'Install-Module -Name SqlServer -Force'
+
+        - task: DownloadBuildArtifacts@0
+          inputs:
+            buildType: current
+            downloadType: single
+            artifactName: tfplan
+            downloadPath: $(System.ArtifactsDirectory)
+
+        - task: Bash@3
+          displayName: 'Extract Plan'
+          inputs:
+            workingDirectory: $(System.DefaultWorkingDirectory)
+            targetType: 'inline'
+            script: |
+              set -euo pipefail
+
+              tar zxvf $(System.ArtifactsDirectory)/tfplan/drop.tgz
+
+        - task: AzureCLI@2
+          displayName: 'terraform apply'
+          inputs:
+            workingDirectory: $(working_directory)
+            azureSubscription: 'PC-TF-GOV-SC'
+            scriptLocation: 'inlineScript'
+            scriptType: 'bash'
+            inlineScript: |
+              set -euo pipefail
+              ./terraform workspace select $(tenant_code)
+              ./terraform apply \
+                      -input=false \
+                      -no-color \
+                      plan.tfplan
