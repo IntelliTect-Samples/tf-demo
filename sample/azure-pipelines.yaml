@@ -81,7 +81,7 @@ stages:
           "--- output ---------------------------------------------------------------------------------------------"
           type $out/output.txt
 
-    - publish: $(Build.ArtifactStagingDirectory)/$(target-dir)/plan
+    - publish: $(Build.ArtifactStagingDirectory)/plan
       artifact: Plan
 
 - stage: WaitForValidation
@@ -121,7 +121,7 @@ stages:
           inputs:
             buildType: 'current'
             artifactName: 'Plan'
-            targetPath: '$(Build.SourcesDirectory)/$(target-dir)/'
+            targetPath: '$(working_directory)'
 
         - task: AzureCLI@2
           displayName: 'terraform apply'
