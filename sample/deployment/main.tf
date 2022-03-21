@@ -4,17 +4,10 @@ locals {
 
 provider "azurerm" {
   subscription_id = var.subscription_id
+  client_id = var.client_id
+  client_secret = var.client_secret
+  tenant_id =  var.tenant_id
   features {}
-}
-
-terraform {
-    backend "azurerm" {
-        resource_group_name  = "backend-rg"
-        storage_account_name = "jcbackendstorage"
-        container_name       = "state"
-        key                  = "terraform.tfstate"
-        access_key           = "Fx2LgvNR8jzT8IsYp51205ASsIBEEbZVSI3k2rRS2aaUl8nb669NV62idFpToE8t/p2CjnfxKzaTNk0EAsJSRA=="
-    }
 }
 
 module "resource_group" {
