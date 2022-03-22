@@ -1,11 +1,11 @@
 locals {
   location = "East US"
-  databases = {
+  key_vaults = {
     "first" = {
-      name = "test-database1"
+      name = "jcmeetup-kv1"
     }
     "second" = {
-      name = "test-database2"
+      name = "jcmeetup-kv2"
     }
   }
 }
@@ -35,8 +35,9 @@ module "resource_group" {
 
 module "key_vault" {
   source = "git::https://github.com/IntelliTect-Samples/tf-demo.git//modules/azurerm_key_vault?ref=key_vault/1.0.0"
+  for_each = local.key_vaults
 
-  name                = "jcmeetup-kv"
+  name                = each.value.name
   location            = local.location
   resource_group_name = module.resource_group.resource_group.name
 }
@@ -52,20 +53,19 @@ module "sql_server" {
 
 module "database" {
   source   = "git::https://github.com/IntelliTect-Samples/tf-demo.git//modules/azurerm_mssql_database?ref=mssql_database/1.0.0"
-  for_each = local.databases
 
-  name        = each.value.name
+  name        = "test-database"
   server_id   = module.sql_server.mssql_server.id
   server_name = module.sql_server.mssql_server.name
 }
 
-# output "database1_name" {
-#   value = module.database[0].mssql_database.id
-# }
+output "key_vault_1_name" {
+  value = module.key_vault["first"].key_vault.name
+}
 
-# output "database2_name" {
-#   value = module.database[1].mssql_database.id
-# }
+output "key_vault_2_name" {
+  value = module.key_vault["second"].key_vault.name
+}
 
 
 
