@@ -1,22 +1,17 @@
 
-variable tags {
-    type = object({
-        tag1 = string
-        tag2 = string
-        tag3 = string
-    })
-}
-
+# add Provisioner to tags
 locals {
-  my_tags = merge(var.tags, {Automation = "Terraform"})
+  my_tags = merge(var.tags, {Provisioner = "Terraform"})
 }
 
+# trigger a plan
 resource "null_resource" "test" {
     triggers =  {
         currentdate = timestamp()
     }
 }
 
+# make tags available as output
 output "tags" {
     value = local.my_tags
 }

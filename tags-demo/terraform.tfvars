@@ -1,6 +1,6 @@
 tags={
-    tag1="fred"
-    tag2="wilma"
-    tag3="bambam"
+    Environment="dev"
+    BusinessUnit="demo"
+    Maintainer="bambam"
     jenny="curry"
 }
