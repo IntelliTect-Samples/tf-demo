@@ -59,13 +59,13 @@ module "database" {
   server_name = module.sql_server.mssql_server.name
 }
 
-output "database1_name" {
-  value = module.database[0].mssql_database.id
-}
+# output "database1_name" {
+#   value = module.database[0].mssql_database.id
+# }
 
-output "database2_name" {
-  value = module.database[1].mssql_database.id
-}
+# output "database2_name" {
+#   value = module.database[1].mssql_database.id
+# }
 
 
 
