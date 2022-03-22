@@ -19,7 +19,7 @@ terraform {
 }
 
 module "resource_group" {
-  source = "git::https://github.com/IntelliTect-Samples/tf-demo/modules/azurerm_resource_group.git?ref=resource_group/1.0.0"
+  source = "git::https://github.com/IntelliTect-Samples/tf-demo.git//modules/azurerm_resource_group?ref=resource_group/1.0.0"
 
   name     = "test-rg"
   location = local.location
