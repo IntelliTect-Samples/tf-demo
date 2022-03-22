@@ -6,7 +6,7 @@ variable "name" {
 variable "tags" {
   type        = map(any)
   description = "Tags for the resource"
-  default = {}
+  default     = {}
 }
 
 variable "server_id" {
@@ -47,13 +47,13 @@ variable "elastic_pool_id" {
 variable "failover_group_name" {
   type        = string
   description = "The name of the failover group to add the database to."
-  default = null
+  default     = null
 }
 
 variable "failover_group_resource_group_name" {
   type        = string
   description = "The name of the resource group containing the failover group to add the database to."
-  default = null
+  default     = null
 }
 
 variable "geo_backup_enabled" {
