@@ -3,10 +3,6 @@ locals {
   admin_password = (var.administrator_login_password == null ? random_password.password.result : var.administrator_login_password)
 }
 
-terraform {
-  experiments = [module_variable_optional_attrs]
-}
-
 resource "random_password" "password" {
   length  = 13
   special = true
