@@ -63,8 +63,3 @@ output "key_vault_1_name" {
 output "key_vault_2_name" {
   value = module.key_vault["second"].key_vault.name
 }
-
-
-
-
-
