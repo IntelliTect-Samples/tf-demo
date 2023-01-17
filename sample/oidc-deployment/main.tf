@@ -11,16 +11,13 @@ locals {
 }
 
 provider "azurerm" {
-  subscription_id = var.subscription_id
-  client_id       = var.client_id
-  client_secret   = var.client_secret
-  tenant_id       = var.tenant_id
+  use_oidc = true
   features {}
 }
 
 terraform {
   backend "azurerm" {}
-  required_version = ">= 1.1.7"
+  required_version = ">= 3.7.0"
   required_providers {
     azurerm = "~> 2.76"
   }
@@ -43,7 +40,7 @@ module "key_vault" {
 }
 
 module "sql_server" {
-  source = "git::https://github.com/IntelliTect-Samples/tf-demo.git//modules/azurerm_mssql_server?ref=mssql_server/1.0.0"
+  source = "../../modules/azurerm_mssql_server"
 
   name                = "jcmeetup-sqlserver"
   resource_group_name = module.resource_group.resource_group.name
@@ -66,8 +63,3 @@ output "key_vault_1_name" {
 output "key_vault_2_name" {
   value = module.key_vault["second"].key_vault.name
 }
-
-
-
-
-
