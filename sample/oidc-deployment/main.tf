@@ -16,10 +16,15 @@ provider "azurerm" {
 }
 
 terraform {
-  backend "azurerm" {}
-  required_version = ">= 3.7.0"
+  backend "azurerm" {
+        resource_group_name  = "backend-rg"
+        storage_account_name = "jcbackendstorage"
+        container_name       = "tfstate"
+        key                  = "terraform.tfstate"
+    }
+  required_version = ">= 1.1.7"
   required_providers {
-    azurerm = "~> 2.76"
+    azurerm = "~>3.7.0"
   }
 }
 
