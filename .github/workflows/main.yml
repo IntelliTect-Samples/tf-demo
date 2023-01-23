@@ -1,0 +1,45 @@
+name: Azure Terraform Deploy with OIDC
+on: 
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Checkout the repo
+      - uses: actions/checkout@main
+      - uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+   
+      - name: Checkout Terraform Repo
+        uses: actions/checkout@v3
+        with:
+          repository: IntelliTect-Samples/tf-demo
+          token: ${{ secrets.GH_PAT }} # `GH_PAT` is a secret that contains your PAT
+          ref: TerraformDemo3
+          path: tf-demo
+          
+      - name: Execute Terraform
+        shell: pwsh
+        run: |
+          az account show
+          $env:ARM_ACCESS_KEY="${{ secrets.STORAGE_ACCESS_KEY }}"
+          $env:ARM_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}"
+          $env:ARM_SUBSCRIPTION_ID="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          $env:ARM_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}"
+          $TfDirectory = "tf-demo/sample/oidc-deployment"
+          terraform -chdir="$TfDirectory" init
+          terraform -chdir="$TfDirectory" plan -out plan.out 
+          terraform -chdir="$TfDirectory" apply plan.out
+          
+      - name: logout
+        run: |
+          az logout
