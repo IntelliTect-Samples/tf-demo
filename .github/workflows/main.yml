@@ -9,7 +9,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: production
+    environment: Production
     steps:
       # Checkout the repo
       - uses: actions/checkout@main
